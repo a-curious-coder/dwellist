@@ -1,55 +1,18 @@
 import datetime
 import logging
 
-import geopy
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from geopy.geocoders import Nominatim
-
-# TODO: Search Query Constructor class
-# class SearchQueryConstructor:
-#     def __init__(self, config):
-#         self.config = config
-#         self.search_url = self._get_search_url()
-
-
-def get_lat_long(search_term):
-    geolocator = Nominatim(user_agent="geo_locator")
-    location = geolocator.geocode(search_term)
-
-    if location is not None:
-        latitude = location.latitude
-        longitude = location.longitude
-        return latitude, longitude
-    else:
-        return None
-
+from src.searchconstructor import SearchConstructor
 
 class SpareRoom:
     DOMAIN = "https://www.spareroom.co.uk"
     URL_ROOMS = f"{DOMAIN}/flatshare"
-    # URL_SEARCH = URL_ROOMS
-    # TODO: Collect coords for the location
-    # location_coords = get_lat_long()
-
-    # # Radius for the search in kilometers
-    # search_radius_km = 5  # You can adjust this value as needed
-
-    # # Calculate destination coordinates within the search radius
-    # destination_coords = geopy.distance.great_circle(
-    #     kilometers=search_radius_km
-    # ).destination(location_coords, 45)
-
-    # # Extract latitude and longitude values from the destination_coords object
-    # dest_latitude, dest_longitude = (
-    #     destination_coords.latitude,
-    #     destination_coords.longitude,
-    # )
-
-    # def __init__(self, search_url, min_price_pw, max_price_pw, entries_to_scrape):
+    
     def __init__(self, config):
-        self.URL_SEARCH = self._get_search_url()
+        search_constructor = SearchConstructor(config)
+        self.URL_SEARCH = search_constructor.get_search_url()
         # get_lat_long
         self.config = config
         self.rooms_to_scrape = config["ROOMS_TO_SCRAPE"]
@@ -57,9 +20,7 @@ class SpareRoom:
         self.session = requests.Session()
 
         with requests.Session() as session:
-            r = session.get(
-                f"{self.URL_SEARCH}?min_price={config['MIN_RENT_GBP']}&max_price={config['MAX_RENT_GBP']}"
-            )
+            r = session.get(self.URL_SEARCH)
             r.raise_for_status()
             scraper = BeautifulSoup(r.content, "lxml")
 
@@ -70,34 +31,6 @@ class SpareRoom:
         pages = 1 if pages == "" else pages
         self.pages = int(pages)
         self.rooms = []
-
-    def _get_search_url(self):
-        search_url = self.config["SEARCH_URL"].replace(
-            "%MIN_RENT_GBP%", str(self.config["MIN_RENT_GBP"])
-        )
-        search_url = search_url.replace(
-            "%MAX_RENT_GBP%", str(self.config["MAX_RENT_GBP"])
-        )
-        search_url = search_url.replace(
-            "%ROOMS_TO_SCRAPE%", str(self.config["ROOMS_TO_SCRAPE"])
-        )
-        # Do this for AVAILABILITY_FROM_DAY, AVAILABILITY_FROM_MONTH, AVAILABILITY_FROM_YEAR
-        search_url = search_url.replace(
-            "%" + "AVAILABILITY_FROM_DAY" + "%",
-            str(self.config["AVAILABILITY_FROM_DAY"]),
-        )
-        search_url = search_url.replace(
-            "%" + "AVAILABILITY_FROM_MONTH" + "%",
-            str(self.config["AVAILABILITY_FROM_MONTH"]),
-        )
-        search_url = search_url.replace(
-            "%" + "AVAILABILITY_FROM_YEAR" + "%",
-            str(self.config["AVAILABILITY_FROM_YEAR"]),
-        )
-        search_url = search_url.replace(
-            "%" + "SEARCH_TERM" + "%", str(self.config["SEARCH_TERM"])
-        )
-        return search_url
 
     def _get_soup(self, url):
         try:
@@ -119,7 +52,9 @@ class SpareRoom:
     def _get_rooms_info(self, rooms_soup, previous_rooms=None):
         rooms = []
         try:
-            for room in rooms_soup.find_all("article"):
+            scraped_rooms = rooms_soup.find_all("article", class_="panel-listing-result")
+            
+            for room in scraped_rooms:
                 add_room = True
                 if previous_rooms is not None and not previous_rooms.empty:
                     room_id = int(
@@ -139,6 +74,9 @@ class SpareRoom:
         return rooms
 
     def get_rooms(self, previous_rooms=None):
+        if self.rooms_to_scrape // 10 > self.pages:
+            self.rooms_to_scrape = self.pages * 10
+            
         if self.pages == 1:
             soup = self._get_soup(self.URL_SEARCH)
             if soup:
@@ -146,12 +84,11 @@ class SpareRoom:
                     self._get_rooms_info(soup, previous_rooms=previous_rooms)
                 )
         else:
-            logging.info(f"{'Logged Rooms':^15}{'Collected Rooms':^15}{'url':^15}")
+            logging.info(f"{'Logged Rooms':^15}{'Collected Rooms':^15}")
             for i in range(0, self.rooms_to_scrape, 10):
                 logged_rooms = i + 1
-                search_query = self.URL_SEARCH.replace(self.URL_ROOMS, "")
                 logging.info(
-                    f"{logged_rooms:^15}{len(self.rooms):^15}{search_query:^15}"
+                    f"{logged_rooms:^15}{len(self.rooms):^15}"
                 )
                 soup = self._get_soup(f"{self.url}{i}")
                 if soup:

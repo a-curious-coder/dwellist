@@ -10,6 +10,7 @@ from src.spareroom import (
     append_new_rooms_to_spreadsheet,
     read_existing_rooms_from_spreadsheet,
 )
+from src.searchconstructor import SearchConstructor
 
 # Set up logging with traceback
 logging.basicConfig(
@@ -27,40 +28,12 @@ with open("test_config.json") as config_file:
 
 
 def print_settings():
-    print("SETTINGS:")
-    print(f"MIN_RENT_GBP: {config['MIN_RENT_GBP']}")
-    print(f"MAX_RENT_GBP: {config['MAX_RENT_GBP']}")
-    print(f"ROOMS_TO_SCRAPE: {config['ROOMS_TO_SCRAPE']}")
-    print(f"AVAILABILITY_FROM_DAY: {config['AVAILABILITY_FROM_DAY']}")
-    print(f"AVAILABILITY_FROM_MONTH: {config['AVAILABILITY_FROM_MONTH']}")
-    print(f"AVAILABILITY_FROM_YEAR: {config['AVAILABILITY_FROM_YEAR']}")
-    print(f"SEARCH_TERM: {config['SEARCH_TERM']}")
-    print(f"FILENAME: {config['FILENAME']}")
-    print(f"SEARCH_URL: {get_search_url()}")
+    # For each variable in config, print the ones with values
+    print("Settings:")
+    for key, value in config.items():
+        if value != "":
+            print(f"\t{key}: {value}")
 
-
-def get_search_url():
-    search_url = config["SEARCH_URL"].replace(
-        "%MIN_RENT_GBP%", str(config["MIN_RENT_GBP"])
-    )
-    search_url = search_url.replace("%MAX_RENT_GBP%", str(config["MAX_RENT_GBP"]))
-    search_url = search_url.replace(
-        "%" + "ROOMS_TO_SCRAPE%", str(config["ROOMS_TO_SCRAPE"])
-    )
-    # Do this for AVAILABILITY_FROM_DAY, AVAILABILITY_FROM_MONTH, AVAILABILITY_FROM_YEAR
-    search_url = search_url.replace(
-        "%" + "AVAILABILITY_FROM_DAY" + "%", str(config["AVAILABILITY_FROM_DAY"])
-    )
-    search_url = search_url.replace(
-        "%" + "AVAILABILITY_FROM_MONTH" + "%", str(config["AVAILABILITY_FROM_MONTH"])
-    )
-    search_url = search_url.replace(
-        "%" + "AVAILABILITY_FROM_YEAR" + "%", str(config["AVAILABILITY_FROM_YEAR"])
-    )
-    search_url = search_url.replace(
-        "%" + "SEARCH_TERM" + "%", str(config["SEARCH_TERM"])
-    )
-    return search_url
 
 
 def parse_coordinates(coords):
