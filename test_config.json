@@ -1,0 +1,11 @@
+{
+    "FILENAME": "spareroom_listing.csv",
+    "SEARCH_TERM": "London",
+    "SEARCH_URL": "/search.pl?nmsq_mode=normal&action=search&max_per_page=&flatshare_type=offered&search=%SEARCH_TERM%&min_rent=%MIN_RENT_GBP%&max_rent=%MAX_RENT_GBP%&per=pw&available_search=N&day_avail=%AVAILABILITY_FROM_DAY%&mon_avail=%AVAILABILITY_FROM_MONTH%&year_avail=%AVAILABILITY_FROM_YEAR%&min_term=0&max_term=0&days_of_wk_available=7+days+a+week&showme_rooms=Y",
+    "MIN_RENT_GBP": 175,
+    "MAX_RENT_GBP": 225,
+    "ROOMS_TO_SCRAPE": 300,
+    "AVAILABILITY_FROM_DAY": 1,
+    "AVAILABILITY_FROM_MONTH": 11,
+    "AVAILABILITY_FROM_YEAR": 2023
+}

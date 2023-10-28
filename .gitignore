@@ -1,0 +1,8 @@
+config.json
+log.txt
+.venv
+*.html
+*.csv
+.vscode
+__pycache__
+*.DS_Store
