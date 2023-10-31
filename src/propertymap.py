@@ -5,26 +5,33 @@ from datetime import datetime
 
 import folium
 import pandas as pd
+import plotly.graph_objects as go
 
 
 class RoomMapGenerator:
-    """ Generate a map of the rooms in the spreadsheet """
+    """Generate a map of the rooms in the spreadsheet"""
+
     def __init__(self, config):
         self.config = config
         self.logger = logging.getLogger(__name__)
 
     def _read_data(self):
         try:
-            data = pd.read_csv(self.config["FILENAME"])
+            self.data = pd.read_csv(self.config["FILENAME"])
         except pd.errors.EmptyDataError:
             logging.error("No data found in %s", self.config["FILENAME"])
 
-        data.fillna("", inplace=True)
-        data["location_coords"] = data["location_coords"].apply(self._parse_coordinates)
-        data["Latitude"] = data["location_coords"].apply(lambda x: x[0])
-        data["Longitude"] = data["location_coords"].apply(lambda x: x[1])
-        data["Available"] = data["Available"].apply(self._calculate_available_months)
-        return data
+        self.data.fillna("", inplace=True)
+        self.data["location_coords"] = self.data["location_coords"].apply(
+            self._parse_coordinates
+        )
+        self.data["Latitude"] = self.data["location_coords"].apply(lambda x: x[0])
+        self.data["Longitude"] = self.data["location_coords"].apply(lambda x: x[1])
+        self.data["Available"] = self.data["Available"].apply(
+            self._calculate_available_months
+        )
+        self.data.to_csv("test.csv", index=False)
+        return self.data
 
     @staticmethod
     def _parse_coordinates(coords):
@@ -59,7 +66,11 @@ class RoomMapGenerator:
             for key in row.keys()
             if key.startswith("image_") and row[key] != ""
         ]
-        image_link = f'<img src="{image_links[0]}" alt="Image 1" width="200px">' if image_links else ""
+        image_link = (
+            f'<img src="{image_links[0]}" alt="Image 1" width="200px">'
+            if image_links
+            else ""
+        )
         # write img tags for each image link
         # image_tags = [
         #     f'<img src="{image_link}" alt="Room {i + 1}" width="200px">'
@@ -79,50 +90,102 @@ class RoomMapGenerator:
             </div>
         """
 
+    # def generate_map(self):
+    #     """Generate a map of the rooms in the spreadsheet"""
+    #     map_center = [self.data["Latitude"].mean(), self.data["Longitude"].mean()]
+    #     my_map = folium.Map(
+    #         location=map_center, zoom_start=12, tiles="cartodbdark_matter"
+    #     )
+
+    #     for _, row in self.data.iterrows():
+    #         popup_content = self._create_popup_content(row)
+    #         icon_color = (
+    #             "green"
+    #             if row["date_scraped"] == datetime.today().strftime("%d-%m-%Y")
+    #             else "orange"
+    #         )
+    #         icon = folium.Icon(
+    #             color=icon_color, icon="star" if icon_color == "green" else "home"
+    #         )
+    #         folium.Marker(
+    #             location=(row["Latitude"], row["Longitude"]),
+    #             popup=folium.Popup(popup_content, max_width=250),
+    #             tooltip=row["Area"],
+    #             icon=icon,
+    #         ).add_to(my_map)
+
+    #     my_map.fit_bounds(my_map.get_bounds())
+
+    #     tile_layers = [
+    #         "cartodbdark_matter",
+    #         "openstreetmap",
+    #         "stamenterrain",
+    #         "stamentoner",
+    #         "stamenwatercolor",
+    #         "cartodbpositron",
+    #     ]
+
+    #     for layer in tile_layers:
+    #         folium.TileLayer(layer).add_to(my_map)
+
+    #     # Add LayerControl for filter control
+    #     folium.LayerControl(collapsed=False).add_to(my_map)
+
+    #     my_map.save("map.html")
+    #     print("Map has been saved as 'map.html'.")
+
     def generate_map(self):
-        """ Generate a map of the rooms in the spreadsheet """
+        """Generate a map of the rooms in the spreadsheet"""
         self.data = self._read_data()
         map_center = [self.data["Latitude"].mean(), self.data["Longitude"].mean()]
-        my_map = folium.Map(location=map_center, zoom_start=12, tiles="cartodbdark_matter")
 
-        for _, row in self.data.iterrows():
-            popup_content = self._create_popup_content(row)
-            icon_color = (
-                "green"
-                if row["date_scraped"] == datetime.today().strftime("%d-%m-%Y")
-                else "orange"
-            )
-            icon = folium.Icon(
-                color=icon_color, icon="star" if icon_color == "green" else "home"
-            )
-            folium.Marker(
-                location=(row["Latitude"], row["Longitude"]),
-                popup=folium.Popup(popup_content, max_width=250),
-                tooltip=row["Area"],
-                icon=icon,
-            ).add_to(my_map)
+        # Create a scattermapbox trace for the markers
+        marker_trace = go.Scattermapbox(
+            lat=self.data["Latitude"],
+            lon=self.data["Longitude"],
+            mode="markers",
+            marker=go.scattermapbox.Marker(
+                size=25, color="rgb(0, 255, 0)", opacity=0.7
+            ),
+            text=self.data["Area"],
+            hovertemplate="<b>%{text}</b><br><br>"
+            + "Latitude: %{lat:.4f}<br>"
+            + "Longitude: %{lon:.4f}<br>"
+            + "Date Scraped: %{marker.color}",
+        )
 
-        my_map.fit_bounds(my_map.get_bounds())
+        # Create the layout for the map
+        layout = go.Layout(
+            mapbox=dict(
+                center=dict(lat=map_center[0], lon=map_center[1]),
+                zoom=12,
+                style="open-street-map",
+            ),
+            margin=dict(l=0, r=0, t=0, b=0),
+            showlegend=True,
+            legend=dict(
+                x=0,
+                y=1,
+                traceorder="normal",
+                font=dict(family="sans-serif", size=12, color="black"),
+                bgcolor="white",
+                bordercolor="gray",
+                borderwidth=1,
+            ),
+        )
 
-        tile_layers = [
-            "cartodbdark_matter",
-            "openstreetmap",
-            "stamenterrain",
-            "stamentoner",
-            "stamenwatercolor",
-            "cartodbpositron",
-        ]
+        # Create the figure object
+        fig = go.Figure(data=[marker_trace], layout=layout)
 
-        for layer in tile_layers:
-            folium.TileLayer(layer).add_to(my_map)
-
-        folium.LayerControl().add_to(my_map)
-        my_map.save("map.html")
-        print("Map has been saved as 'map.html'.")
+        # Save the figure as an interactive html file
+        fig.write_html("map.html")
+        logging.info("Map has been saved as 'map.html'.")
+        # Show the interactive map
+        fig.show()
 
 
 def main():
-    """ Generate a map of the rooms in the spreadsheet """
+    """Generate a map of the rooms in the spreadsheet"""
     with open("test_config.json", "r", encoding="utf-8") as config_file:
         config = json.load(config_file)
     room_map = RoomMapGenerator(config)

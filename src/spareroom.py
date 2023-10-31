@@ -9,14 +9,14 @@ from src.searchconstructor import SearchConstructor
 
 
 class SpareRoom:
-    """ Scrape rooms from SpareRoom """
+    """Scrape rooms from SpareRoom"""
+
     DOMAIN = "https://www.spareroom.co.uk"
     URL_ROOMS = f"{DOMAIN}/flatshare"
 
     def __init__(self, config):
         search_constructor = SearchConstructor(config)
         self.URL_SEARCH = search_constructor.get_search_url()
-        # get_lat_long
         self.config = config
         self.rooms_to_scrape = config["ROOMS_TO_SCRAPE"]
         self.logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class SpareRoom:
             scraper.find("p", {"class": "navcurrent"}).findAll("strong")[1].string[:-1]
         )
         pages = 1 if pages == "" else pages
-        self.pages = int(pages)
+        self.pages = int(pages) + 1
         self.rooms = []
 
     def _get_soup(self, url):
@@ -46,14 +46,21 @@ class SpareRoom:
         return None
 
     def _get_rooms_info(self, rooms_soup, previous_rooms=None):
-        """ Get room info from search results page
+        """Get room info from search results page
         :param rooms_soup: BeautifulSoup object of search results page
         :param previous_rooms: DataFrame of previously scraped rooms
         :return: list of Room objects
         """
         rooms = []
         try:
-            scraped_rooms = rooms_soup.find_all("article", class_="panel-listing-result")
+            scraped_rooms = rooms_soup.find_all(
+                "article", class_="panel-listing-result"
+            )
+
+            # Ensure listing-features is not included in scraped_rooms
+            scraped_rooms = [
+                room for room in scraped_rooms if "listing-featured" not in str(room)
+            ]
 
             for room in scraped_rooms:
                 add_room = True
@@ -75,6 +82,7 @@ class SpareRoom:
         return rooms
 
     def get_rooms(self, previous_rooms=None):
+        logging.info(f"Scraping rooms from SpareRoom...\n{self.URL_SEARCH}")
         if self.rooms_to_scrape // 10 > self.pages:
             self.rooms_to_scrape = self.pages * 10
             logging.warn("Num rooms to scrape exceeds available rooms.")
@@ -91,13 +99,9 @@ class SpareRoom:
             for i in range(0, self.rooms_to_scrape, 10):
                 soup = self._get_soup(f"{self.url}{i}")
                 if soup:
-                    self.rooms.extend(
-                        self._get_rooms_info(soup, previous_rooms)
-                    )
+                    self.rooms.extend(self._get_rooms_info(soup, previous_rooms))
                     logged_rooms = i + 10
-                    logging.info(
-                        f"{len(self.rooms):^15}{logged_rooms:^15}"
-                    )
+                    logging.info(f"{len(self.rooms):^15}{logged_rooms:^15}")
                     # time.sleep(5)  # Uncomment if rate limiting is needed
 
         return self.rooms
