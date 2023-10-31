@@ -4,12 +4,15 @@ import logging
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
 from src.searchconstructor import SearchConstructor
 
+
 class SpareRoom:
+    """ Scrape rooms from SpareRoom """
     DOMAIN = "https://www.spareroom.co.uk"
     URL_ROOMS = f"{DOMAIN}/flatshare"
-    
+
     def __init__(self, config):
         search_constructor = SearchConstructor(config)
         self.URL_SEARCH = search_constructor.get_search_url()
@@ -38,22 +41,20 @@ class SpareRoom:
             response.raise_for_status()
             if response.status_code == 200:
                 return BeautifulSoup(response.content, "lxml")
-            elif response.status_code == 301:
-                logging.info("Finalizado")
-            else:
-                logging.error(f"Response {response.status_code}. Something went wrong.")
-                logging.debug(f"URL: {response.url}")
-                logging.debug(f"Headers: {response.headers}")
-                logging.debug(f"History: {response.history}")
         except requests.RequestException as e:
-            logging.error(f"Request error: {e}")
+            logging.error("Request error: %s", e)
         return None
 
     def _get_rooms_info(self, rooms_soup, previous_rooms=None):
+        """ Get room info from search results page
+        :param rooms_soup: BeautifulSoup object of search results page
+        :param previous_rooms: DataFrame of previously scraped rooms
+        :return: list of Room objects
+        """
         rooms = []
         try:
             scraped_rooms = rooms_soup.find_all("article", class_="panel-listing-result")
-            
+
             for room in scraped_rooms:
                 add_room = True
                 if previous_rooms is not None and not previous_rooms.empty:
@@ -70,13 +71,15 @@ class SpareRoom:
                     if room is not None:
                         rooms.append(room)
         except AttributeError:
-            logging.error("Error parsing search results page - probably not live")
+            logging.error("Error parsing search results page")
         return rooms
 
     def get_rooms(self, previous_rooms=None):
         if self.rooms_to_scrape // 10 > self.pages:
             self.rooms_to_scrape = self.pages * 10
-            
+            logging.warn("Num rooms to scrape exceeds available rooms.")
+            logging.info(f"Scraping a maximum of {self.rooms_to_scrape} rooms.")
+
         if self.pages == 1:
             soup = self._get_soup(self.URL_SEARCH)
             if soup:
@@ -84,16 +87,16 @@ class SpareRoom:
                     self._get_rooms_info(soup, previous_rooms=previous_rooms)
                 )
         else:
-            logging.info(f"{'Logged Rooms':^15}{'Collected Rooms':^15}")
+            logging.info(f"{'New Rooms':^15}{'Total Rooms':^15}")
             for i in range(0, self.rooms_to_scrape, 10):
-                logged_rooms = i + 1
-                logging.info(
-                    f"{logged_rooms:^15}{len(self.rooms):^15}"
-                )
                 soup = self._get_soup(f"{self.url}{i}")
                 if soup:
                     self.rooms.extend(
-                        self._get_rooms_info(soup, previous_rooms=previous_rooms)
+                        self._get_rooms_info(soup, previous_rooms)
+                    )
+                    logged_rooms = i + 10
+                    logging.info(
+                        f"{len(self.rooms):^15}{logged_rooms:^15}"
                     )
                     # time.sleep(5)  # Uncomment if rate limiting is needed
 
@@ -202,6 +205,16 @@ class Room:
             for dt, dd in zip(feature_list.find_all("dt"), feature_list.find_all("dd")):
                 key = dt.text.replace("\n", " ").replace("#", "").strip().capitalize()
                 features[key] = dd.text.strip()
+
+        images = room_soup.findAll("dl", class_="landscape")
+        for image in images:
+            for image_no, image_link in enumerate(image.find_all("a")):
+                # Get image from img src
+                link = image_link.find("img")["src"]
+                # Ensure image link is prefixed with https:
+                link = link if link.startswith("https:") else f"https:{link}"
+                features[f"image_{image_no}"] = link
+
         return features
 
     def _get_location_coords(self, room_soup):

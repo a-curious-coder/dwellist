@@ -10,7 +10,7 @@ The barebones of the scraper were stolen and bastardised from https://github.com
 ## Filtered google sheet
 ![image](https://user-images.githubusercontent.com/14139469/235493682-db45832a-e911-4813-bbc6-bf55341f4181.png)
 
-
+<!-- TODO: Update the following section -->
 # Usage
 1. Create a file called config.json in the same directory as main.py
 2. Below is an example config.json. The fields are self explanatory.
