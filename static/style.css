@@ -1,0 +1,67 @@
+/* CSS for map container */
+.map-container {
+    position: relative;
+    height: 95vh; /* Set the height of the container to fill the viewport */
+    width: 100%; /* Set the width of the container to fill the viewport */
+}
+
+/* CSS for the marker details card */
+#markerDetailsCard {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px; /* Set the width of the card */
+    height: 100vh; /* Set the height of the card to fill the viewport */
+    background: #fff; /* Set the background color of the card */
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2); /* Add a box shadow to the card */
+    overflow-y: auto; /* Enable vertical scrolling if content overflows the card height */
+    padding: 20px; /* Add padding to the card content */
+    z-index: 1000;
+}
+
+/* CSS for the map element */
+#map {
+    height: 100%; /* Set the height of the map to fill its parent container */
+    width: 70%;
+    margin-left: 10%;
+}
+
+/* CSS for the highlighted marker */
+.highlighted-marker {
+    /* Define the styles for the highlighted marker, for example, change the marker color */
+    color: #ff0000; /* Change the marker color to red */
+}
+
+.leaflet-layer,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out,
+.leaflet-control-attribution {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* CSS for the filter card */
+.filter-card {
+    position: fixed;
+    top: 0;
+    width: 10%;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease;
+}
+
+.filter-content {
+    padding: 20px;
+}
+
+.filter-collapsible {
+    background: #f1f1f1;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+}
+
+.filter-collapsible:hover {
+    background-color: #ddd;
+}
