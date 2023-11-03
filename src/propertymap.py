@@ -17,25 +17,34 @@ class RoomMapGenerator:
 
     def _read_data(self):
         try:
-            self.data = pd.read_csv(self.config["FILENAME"])
+            self.data = pd.read_csv(self.config["filename"])
         except pd.errors.EmptyDataError:
-            logging.error("No data found in %s", self.config["FILENAME"])
+            logging.error("No data found in %s", self.config["filename"])
 
         self.data.fillna("", inplace=True)
         self.data["location_coords"] = self.data["location_coords"].apply(
             self._parse_coordinates
         )
-        self.data["Latitude"] = self.data["location_coords"].apply(lambda x: x[0])
-        self.data["Longitude"] = self.data["location_coords"].apply(lambda x: x[1])
+        self.data["latitude"] = self.data["location_coords"].apply(lambda x: x[0])
+        self.data["longitude"] = self.data["location_coords"].apply(lambda x: x[1])
         self.data["Available"] = self.data["Available"].apply(
             self._calculate_available_months
         )
+        # Ensure all column headers are lowercase, have spaces replaced with underscores and no symbols
+        self.data.columns = [
+            column.lower().replace(" ", "_").replace("?", "")
+            for column in self.data.columns
+        ]
         self.data.to_csv("test.csv", index=False)
         return self.data
 
     @staticmethod
     def _parse_coordinates(coords):
-        return [float(coord) for coord in coords[1:-1].split(",")]
+        try:
+            parsed_coords = [float(coord) for coord in coords[1:-1].split(",")]
+        except ValueError:
+            parsed_coords = [0, 0]
+        return parsed_coords
 
     @staticmethod
     def _calculate_available_months(date_string):
@@ -78,10 +87,10 @@ class RoomMapGenerator:
         # ]
         return f"""
             <div style="width: 200px;">
-                <h3>{row["Area"]}</h3>
+                <h3>{row["area"]}</h3>
                 {image_link}
-                <p><strong>Type:</strong> {row["Type"]}</p>
-                <p><strong>Available:</strong> {row["Available"]}</p>
+                <p><strong>Type:</strong> {row["type"]}</p>
+                <p><strong>Available:</strong> {row["available"]}</p>
                 <p><strong>Room Prices:</strong></p>
                 <ul>
                     {''.join(room_prices)}
@@ -92,7 +101,7 @@ class RoomMapGenerator:
 
     # def generate_map(self):
     #     """Generate a map of the rooms in the spreadsheet"""
-    #     map_center = [self.data["Latitude"].mean(), self.data["Longitude"].mean()]
+    #     map_center = [self.data["latitude"].mean(), self.data["longitude"].mean()]
     #     my_map = folium.Map(
     #         location=map_center, zoom_start=12, tiles="cartodbdark_matter"
     #     )
@@ -108,9 +117,9 @@ class RoomMapGenerator:
     #             color=icon_color, icon="star" if icon_color == "green" else "home"
     #         )
     #         folium.Marker(
-    #             location=(row["Latitude"], row["Longitude"]),
+    #             location=(row["latitude"], row["longitude"]),
     #             popup=folium.Popup(popup_content, max_width=250),
-    #             tooltip=row["Area"],
+    #             tooltip=row["area"],
     #             icon=icon,
     #         ).add_to(my_map)
 
@@ -137,20 +146,20 @@ class RoomMapGenerator:
     def generate_map(self):
         """Generate a map of the rooms in the spreadsheet"""
         self.data = self._read_data()
-        map_center = [self.data["Latitude"].mean(), self.data["Longitude"].mean()]
+        map_center = [self.data["latitude"].mean(), self.data["longitude"].mean()]
 
         # Create a scattermapbox trace for the markers
         marker_trace = go.Scattermapbox(
-            lat=self.data["Latitude"],
-            lon=self.data["Longitude"],
+            lat=self.data["latitude"],
+            lon=self.data["longitude"],
             mode="markers",
             marker=go.scattermapbox.Marker(
                 size=25, color="rgb(0, 255, 0)", opacity=0.7
             ),
-            text=self.data["Area"],
+            text=self.data["area"],
             hovertemplate="<b>%{text}</b><br><br>"
-            + "Latitude: %{lat:.4f}<br>"
-            + "Longitude: %{lon:.4f}<br>"
+            + "latitude: %{lat:.4f}<br>"
+            + "longitude: %{lon:.4f}<br>"
             + "Date Scraped: %{marker.color}",
         )
 

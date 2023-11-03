@@ -34,12 +34,12 @@ def update_map(selected_column):
     )
     fig = px.scatter_mapbox(
         filtered_data,
-        lat="Latitude",
-        lon="Longitude",
-        text="Area",
+        lat="latitude",
+        lon="longitude",
+        text="area",
         center={
-            "lat": filtered_data["Latitude"].mean(),
-            "lon": filtered_data["Longitude"].mean(),
+            "lat": filtered_data["latitude"].mean(),
+            "lon": filtered_data["longitude"].mean(),
         },
         zoom=12,
         height=600,

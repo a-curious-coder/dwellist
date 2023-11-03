@@ -1,4 +1,5 @@
 """ This module is responsible for constructing the search URL based on the config file. """
+from datetime import datetime
 
 
 class SearchConstructor:
@@ -12,8 +13,10 @@ class SearchConstructor:
 
     def _construct_search_url(self):
         search_url = self.BASE_URL
+        # Configure todays date for the available_from filter
+        today = datetime.today().strftime("%Y-%m-%d")
         filters = {
-            "available_from": self.config.get("available_from", ""),
+            "available_from": self.config.get("available_from", today),
             "available_search": self.config.get("available_search", ""),
             "bills_inc": self.config.get("bills_inc", "Y"),
             "couples": self.config.get("couples", ""),
@@ -49,7 +52,7 @@ class SearchConstructor:
             "room_types": self.config.get("room_types", ""),
             "furnished": self.config.get("furnished", ""),
             "rooms_for": self.config.get("rooms_for", ""),
-            "search": self.config.get("SEARCH_TERM", ""),
+            "search": self.config.get("search_term", ""),
             "share_type": self.config.get("share_type", ""),
             "short_lets_considered": self.config.get("short_lets_considered", ""),
             "showme_1beds": self.config.get("showme_1beds", ""),
