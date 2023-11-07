@@ -18,7 +18,7 @@ class SearchConstructor:
         filters = {
             "available_from": self.config.get("available_from", today),
             "available_search": self.config.get("available_search", ""),
-            "bills_inc": self.config.get("bills_inc", "Y"),
+            "bills_inc": self.config.get("bills_inc", "Yes"),
             "couples": self.config.get("couples", ""),
             "days_of_wk_available": self.config.get(
                 "days_of_wk_available", "7+days+a+week"
@@ -29,7 +29,7 @@ class SearchConstructor:
             "gayshare": self.config.get("gayshare", "N"),
             "genderfilter": self.config.get("genderfilter", ""),
             "keyword": self.config.get("keyword", ""),
-            "landlord": self.config.get("landlord", ""),
+            "landlord": self.config.get("landlord", "live_out"),
             "living_room": self.config.get("living_room", ""),
             "max_age_req": self.config.get("max_age_req", ""),
             "max_suitable_age": self.config.get("max_suitable_age", ""),
