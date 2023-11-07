@@ -8,7 +8,6 @@ import json
 import logging
 import os
 
-from src.propertymap import RoomMapGenerator
 from src.spareroom import (
     SpareRoom,
     append_new_rooms_to_spreadsheet,
@@ -43,7 +42,6 @@ def main():
     with open("test_config.json", "r", encoding="utf-8") as config_file:
         config = json.load(config_file)
 
-    property_map = RoomMapGenerator(config)
     print_title()
     try:
         filename = config["filename"]
@@ -73,8 +71,7 @@ def main():
                 existing_rooms_df, filtered_new_rooms, filename
             )
             counter += 1
-        logging.info("Results saved: ./%s", filename)
-        property_map.generate_map()
+        logging.info("Saving listing results to: %s", filename)
     except KeyboardInterrupt:
         logging.info(" User interrupted.")
     finally:
