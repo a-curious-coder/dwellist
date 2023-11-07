@@ -1,4 +1,4 @@
-# <img src="dark-minimal-house.png" width="20" height="25" /> Dwellist
+# <img src="misc/dark-minimal-house.png" width="20" height="25" /> Dwellist
 Feel free to message me on discord @curious_coder if you want to contribute in making this project better.
 
 This project collates property data from Spareroom UK based on the filter values in the `config.json`. 

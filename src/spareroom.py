@@ -1,5 +1,5 @@
 import datetime
-from utilities import DwellistLogger
+from src.utilities import DwellistLogger
 import traceback
 
 import pandas as pd
@@ -112,6 +112,7 @@ class SpareRoom:
             if room_obj:
                 rooms.append(room_obj)
         return rooms
+
     # def _get_rooms_info(self, rooms_soup, previous_rooms=None):
     #     """Get room info from search results page
     #     :param rooms_soup: BeautifulSoup object of search results page

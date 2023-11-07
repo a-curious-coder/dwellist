@@ -14,12 +14,12 @@ from src.spareroom import (
     append_new_rooms_to_spreadsheet,
     read_existing_rooms_from_spreadsheet,
 )
-from utilities import DwellistLogger
+from src.utilities import DwellistLogger
 
 
 def print_title():
     """Print the title from title.txt"""
-    with open("title.txt", "r", encoding="utf-8") as title_file:
+    with open("misc/title.txt", "r", encoding="utf-8") as title_file:
         title = title_file.read()
     print(title)
 
@@ -31,10 +31,6 @@ def main():
     appends new rooms to the spreadsheet, and generates a map of the new rooms.
     """
     logger = DwellistLogger.get_logger()
-    # Example log messages
-    logger.debug("This is a debug message")
-    logger.info("This is an info message")
-    logger.warning("This is a warning message")
     os.system("cls" if os.name == "nt" else "clear")
     with open("test_config.json", "r", encoding="utf-8") as config_file:
         config = json.load(config_file)
@@ -68,11 +64,11 @@ def main():
                 existing_rooms_df, filtered_new_rooms, filename
             )
             counter += 1
-        logging.info("Saving listing results to: %s", filename)
+        logger.info("Saving listing results to: %s", filename)
     except KeyboardInterrupt:
-        logging.info(" User interrupted.")
+        logger.info("Keyboard interrupt.")
     finally:
-        logging.info("Exiting.")
+        logger.info("Exiting.")
 
 
 if __name__ == "__main__":
