@@ -70,16 +70,34 @@ var defaultMarkerIcon = L.icon({
     popupAnchor: [0, -32] // Set the popup anchor for the icon
 });
 
+var defaultNewMarkerIcon = L.icon({
+    iconUrl: 'static/icons/default_new.png',
+    iconSize: [32, 32], // Set the size of the icon
+    iconAnchor: [16, 32], // Set the anchor point for the icon
+    popupAnchor: [0, -32] // Set the popup anchor for the icon
+});
+
+
 
 // Function to add markers to the map
 function addMarkers(data) {
 
+    // Get the current date and time
+    const currentDate = new Date();
     // Clear the markers on the map
     markersLayer.clearLayers();
 
     // Ensure each marker is plotted on the map
     data.forEach(
         function(markerData) {
+            let dateComponents = markerData.date_scraped.split('-');
+            let day = parseInt(dateComponents[0], 10);
+            let month = parseInt(dateComponents[1], 10) - 1; // Months are 0-based (0-11)
+            let year = parseInt(dateComponents[2], 10);
+
+            // Create a Date object using the parsed components
+            let dateScraped = new Date(year, month, day);
+            
             // Create a new marker
             var newMarker = L.marker([markerData.latitude, markerData.longitude], {icon: defaultMarkerIcon});
 
@@ -88,6 +106,12 @@ function addMarkers(data) {
 
             // Create a popup with picture from image_0 (url) and price
             newMarker.bindPopup(popupContent).openPopup();
+
+            // Set marker icon based on marker's date
+            if (dateScraped > currentDate - 24 * 60 * 60 * 1000) {
+                newMarker.setIcon(defaultNewMarkerIcon);
+            }
+            
             // Move the map to the marker when the popup is opened
             newMarker.on('popupopen', function() {
                 map.setView(newMarker.getLatLng());
@@ -97,6 +121,12 @@ function addMarkers(data) {
                 markersLayer.eachLayer(
                     function(layer) {
                         layer.setIcon(defaultMarkerIcon);
+
+                        // Compare the two dates
+                        // 01/11/2023 > 06/11/2023
+                        if (dateScraped > currentDate - 24 * 60 * 60 * 1000) {
+                            layer.setIcon(defaultNewMarkerIcon);
+                        }
                     }
                 );
                 // Set the highlighted marker icon for the clicked marker

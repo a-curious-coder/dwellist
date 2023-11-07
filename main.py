@@ -7,6 +7,7 @@ Barebones taken from afspies; modified, updated and improved by a-curious-coder
 import json
 import logging
 import os
+import time
 
 from src.propertymap import RoomMapGenerator
 from src.spareroom import (
@@ -14,16 +15,7 @@ from src.spareroom import (
     append_new_rooms_to_spreadsheet,
     read_existing_rooms_from_spreadsheet,
 )
-
-# Set up logging with traceback
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s]\t%(message)s",
-    handlers=[
-        logging.FileHandler("log.txt"),
-        logging.StreamHandler(),
-    ],
-)
+from utilities import DwellistLogger
 
 
 def print_title():
@@ -39,6 +31,11 @@ def main():
     gets new rooms from SpareRoom, filters out rooms that already exist in the spreadsheet,
     appends new rooms to the spreadsheet, and generates a map of the new rooms.
     """
+    logger = DwellistLogger.get_logger()
+    # Example log messages
+    logger.debug("This is a debug message")
+    logger.info("This is an info message")
+    logger.warning("This is a warning message")
     os.system("cls" if os.name == "nt" else "clear")
     with open("test_config.json", "r", encoding="utf-8") as config_file:
         config = json.load(config_file)
@@ -73,8 +70,8 @@ def main():
                 existing_rooms_df, filtered_new_rooms, filename
             )
             counter += 1
-        logging.info("Results saved: ./%s", filename)
-        property_map.generate_map()
+        logging.info("Saving listing results to: %s", filename)
+        # property_map.generate_map()
     except KeyboardInterrupt:
         logging.info(" User interrupted.")
     finally:

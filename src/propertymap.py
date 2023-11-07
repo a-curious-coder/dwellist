@@ -21,7 +21,7 @@ class RoomMapGenerator:
         except pd.errors.EmptyDataError:
             logging.error("No data found in %s", self.config["filename"])
 
-        self.data.fillna("", inplace=True)
+        self.data.fillna(0, inplace=True)
         self.data["location_coords"] = self.data["location_coords"].apply(
             self._parse_coordinates
         )
