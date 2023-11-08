@@ -1,13 +1,13 @@
+
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 import datetime
+import pandas as pd
+import requests
+from src.searchconstructor import SearchConstructor
 from src.utilities import DwellistLogger
 import traceback
 
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
-
-from src.searchconstructor import SearchConstructor
 
 
 class SpareRoom:
