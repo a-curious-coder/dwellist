@@ -40,3 +40,10 @@ class DwellistLogger:
         logger.addHandler(console_handler)
 
         return logger
+
+
+def print_title():
+    """Print the title from title.txt"""
+    with open("misc/title.txt", "r", encoding="utf-8") as title_file:
+        title = title_file.read()
+    print(title)
