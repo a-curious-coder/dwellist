@@ -12,7 +12,7 @@ var markersLayer = L.layerGroup().addTo(map);
 var markersData = [];
 
 function generatePopupContent(row) {
-    var imageLink = row["image_0"] ? `<img src="${row["image_0"]}" alt="Property Image" style="max-width: 100%">` : '';
+    var imageLink = row["main_image"] ? `<img src="${row["main_image"]}" alt="Property Image" style="max-width: 100%">` : '';
     var roomPrice = "£" + row["room_0_price"];
 
     var popupContent = `
@@ -37,7 +37,7 @@ function updateMarkerDetailsCard(content) {
 }
 
 function generateCardContent(row) {
-    var imageLink = row["image_0"] ? `<img src="${row["image_0"]}" alt="Property Image" style="max-width: 100%">` : '';
+    var imageLink = row["main_image"] ? `<img src="${row["main_image"]}" alt="Property Image" style="max-width: 100%">` : '';
     var roomPrice = "£" + row["room_0_price"];
 
     var cardContent = `
@@ -104,7 +104,7 @@ function addMarkers(data) {
             // Generate card content for the marker
             var popupContent = generatePopupContent(markerData);
 
-            // Create a popup with picture from image_0 (url) and price
+            // Create a popup with picture from main_image (url) and price
             newMarker.bindPopup(popupContent).openPopup();
 
             // Set marker icon based on marker's date
