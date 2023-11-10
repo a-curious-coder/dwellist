@@ -5,9 +5,10 @@ import traceback
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 
 from src.searchconstructor import SearchConstructor
+from concurrent.futures import ThreadPoolExecutor
 
 
 class SpareRoom:
