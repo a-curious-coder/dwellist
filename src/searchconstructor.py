@@ -62,6 +62,7 @@ class SearchConstructor:
             "showme_rooms": self.config.get("showme_rooms", ""),
             "smoking": self.config.get("smoking", ""),
             "vegetarians": self.config.get("vegetarians", ""),
+            "sort_by": self.config.get("sort_by", "")
         }
 
         for key, value in filters.items():

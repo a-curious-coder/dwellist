@@ -6,4 +6,11 @@ log.txt
 .vscode
 __pycache__
 *.DS_Store
+room.txt
 room_debug/
+*.log
+*.ipynb
+tests/
+*.log
+*.ipynb
+tests/

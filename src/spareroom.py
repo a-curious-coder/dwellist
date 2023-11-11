@@ -1,13 +1,14 @@
-
-from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
 import datetime
-import pandas as pd
-import requests
-from src.searchconstructor import SearchConstructor
 from src.utilities import DwellistLogger
 import traceback
 
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import concurrent.futures
+
+from src.searchconstructor import SearchConstructor
+from concurrent.futures import ThreadPoolExecutor
 
 
 class SpareRoom:
@@ -27,17 +28,19 @@ class SpareRoom:
         self.already_logged = 0
         self.unavailable_rooms = 0
         with requests.Session() as session:
-            r = session.get(self.URL_SEARCH)
-            r.raise_for_status()
-            scraper = BeautifulSoup(r.content, "lxml")
+            request = session.get(self.URL_SEARCH)
+            request.raise_for_status()
+            self.scraper = BeautifulSoup(request.content, "lxml")
+        self.logger.debug(f"URL: {request.url}")
 
-        self.url = f"{r.url}offset="
-        pages = (
-            scraper.find("p", {"class": "navcurrent"}).findAll("strong")[1].string[:-1]
-        )
-        pages = 1 if pages == "" else pages
-        self.pages = int(pages) + 1
+            request = session.get(self.URL_SEARCH)
+            request.raise_for_status()
+            self.scraper = BeautifulSoup(request.content, "lxml")
+        self.logger.debug(f"URL: {request.url}")
+
         self.rooms = []
+        self.max_pages = self._get_room_offset()
+        self.url = f"{request.url}offset="
 
     def _get_soup(self, url):
         """In laymans terms, this function gets the HTML from the URL and collates/returns a BeautifulSoup object
@@ -49,14 +52,19 @@ class SpareRoom:
             response.raise_for_status()
             if response.status_code == 200:
                 return BeautifulSoup(response.content, "lxml")
+            elif response.status_code == 302:
+                self.logger.warning("302 redirect")
+                traceback.print_stack()
+                return None
         except requests.RequestException as e:
             self.logger.error("Request error: %s", e)
         return None
 
     def process_room(self, room, previous_rooms, logged_rooms):
         # NOTE: Debugging purposes
-        with open("room_debug/room.txt", "w", encoding="utf-8") as file:
+        with open("room.txt", "w", encoding="utf-8") as file:
             file.write(room.prettify())
+
 
         try:
             room_id = int(room.prettify().split("flatshare_id=")[1].split("&")[0])
@@ -87,7 +95,7 @@ class SpareRoom:
 
     def _get_rooms_info(self, rooms_soup, previous_rooms=None):
         # Create a list to store the futures
-        futures = []
+        rooms = []
         scraped_rooms = rooms_soup.find_all("article", class_="panel-listing-result")
 
         # Ensure listing-features is not included in scraped_rooms
@@ -95,9 +103,14 @@ class SpareRoom:
             room for room in scraped_rooms if "listing-featured" not in str(room)
         ]
 
-        logged_rooms = previous_rooms["id"].values.tolist()
+        logged_rooms = (
+            previous_rooms["id"].values.tolist()
+            if not previous_rooms.empty
+            else pd.DataFrame()
+        )
+        futures = []
         # Create a ThreadPoolExecutor with a limited number of threads
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor() as executor:
             # Process each room in parallel
             for i, room in enumerate(scraped_rooms):
                 future = executor.submit(
@@ -113,65 +126,6 @@ class SpareRoom:
                 rooms.append(room_obj)
         return rooms
 
-    # def _get_rooms_info(self, rooms_soup, previous_rooms=None):
-    #     """Get room info from search results page
-    #     :param rooms_soup: BeautifulSoup object of search results page
-    #     :param previous_rooms: DataFrame of previously scraped rooms
-    #     :return: list of Room objects
-    #     """
-    #     rooms = []
-
-    #     try:
-    #         scraped_rooms = rooms_soup.find_all(
-    #             "article", class_="panel-listing-result"
-    #         )
-
-    #         # Ensure listing-features is not included in scraped_rooms
-    #         scraped_rooms = [
-    #             room for room in scraped_rooms if "listing-featured" not in str(room)
-    #         ]
-    #         logged_rooms = previous_rooms["id"].values.tolist()
-
-    #         for i, room in enumerate(scraped_rooms):
-    #             # NOTE: Debugging purposes
-    #             with open("room_debug/room.txt", "w", encoding="utf-8") as file:
-    #                 file.write(room.prettify())
-
-    #             try:
-    #                 room_id = int(
-    #                     room.prettify().split("flatshare_id=")[1].split("&")[0]
-    #                 )
-    #             except (KeyError, ValueError, IndexError) as e:
-    #                 self.logger.error("Error parsing room id: %s", e)
-
-    #             if "Sorry, this room is no longer available" in room.prettify():
-    #                 # self.logger.warning(f"Room {room_id} no longer available")
-    #                 self.unavailable_rooms += 1
-    #                 continue
-
-    #             add_room = True
-    #             if previous_rooms is not None and not previous_rooms.empty:
-    #                 add_room = room_id not in logged_rooms
-
-    #             if add_room:
-    #                 room_obj = Room(
-    #                     room, self.DOMAIN
-    #                 )  # Assuming Room class instantiation
-    #                 if room_obj is not None:
-    #                     rooms.append(room_obj)
-    #             else:
-    #                 self.logger.debug(f"{room_id} already logged")
-    #                 self.SCRAPED_ROOMS.append(room_id)
-    #                 # If room_id is in SCRAPED_ROOMS twice, something's wrong
-    #                 if self.SCRAPED_ROOMS.count(room_id) > 1:
-    #                     self.logger.error(f"Room {room_id} already logged twice")
-    #                     continue
-    #                 self.already_logged += 1
-    #     except AttributeError:
-    #         self.logger.error("Error parsing search results page")
-    #         self.logger.error(traceback.format_exc())
-    #     return rooms
-
     def _count_available_rooms(self, rooms_soup):
         """Count the number of available rooms for scraping on the search results page
         :param rooms_soup: BeautifulSoup object of search results page
@@ -181,57 +135,87 @@ class SpareRoom:
 
         try:
             rooms = rooms_soup.find_all("article", class_="panel-listing-result")
+            # Exclude listing-featured rooms
+            rooms = [
+                room for room in rooms if "listing-featured" not in str(room)
+            ]
+            num_available_rooms = len(rooms)
         except Exception as e:
             self.logger.error("Error occurred: {}".format(e))
             self.logger.error(traceback.format_exc())
-        finally:
-            num_available_rooms = len(rooms)
         return num_available_rooms
 
-    def get_next_ten_rooms(self, previous_rooms=None, input=0):
+    def get_total_results(self):
+        soup = self._get_soup(self.url)
+        if soup:
+            last_page_rooms = self._count_available_rooms(soup)
+
+            most_rooms = (self.max_pages * 10)-10
+            rooms_to_scrape = min(self.rooms_to_scrape, most_rooms)
+
+            num_rooms = rooms_to_scrape if rooms_to_scrape < (most_rooms+last_page_rooms) else (most_rooms+last_page_rooms)
+            self.logger.info(f"Scraping {num_rooms}/{(most_rooms+last_page_rooms)} potential rooms.")
+        else:
+            self.logger.error("Failed to fetch search results")
+        return num_rooms
+
+    def get_next_ten_rooms(self, previous_rooms=None, input=0) -> list:
+        """Get the next ten rooms from the search results page
+        :param previous_rooms: DataFrame of previously scraped rooms
+        :param input: A factor for a start index for the scraping process
+        :return: list of Room objects
+        """
         start_index = input * 10
         end_index = start_index + 10
-        num_rooms = 0
+
         if start_index >= self.rooms_to_scrape:
-            self.logger.info("Scraping process complete")
             return None
-
-        if self.rooms_to_scrape // 10 >= self.pages:
-            self.rooms_to_scrape = self.pages * 10
-            rooms_to_scrape = (self.pages * 10) - 10
-
-            url = f"{self.url}{rooms_to_scrape}"
-            soup = self._get_soup(url)
-            num_rooms = self._count_available_rooms(soup)
-            num_rooms = num_rooms + (self.rooms_to_scrape - 10)
-            if start_index == 0:
-                self.logger.info(f"Scraping {num_rooms} rooms.")
 
         if input == 0:
             self.logger.info(
                 f"{'New':^15}{'Exists':^15}{'Unavailable':^15}{'Total':^15}"
             )
 
-        if self.pages == 1:
-            soup = self._get_soup(self.URL_SEARCH)
-            if soup:
-                self.rooms.extend(
-                    self._get_rooms_info(soup, previous_rooms=previous_rooms)
-                )
-        else:
-            for i in range(start_index, min(end_index, self.rooms_to_scrape), 10):
-                url = f"{self.url}{i}"
+        for i in range(start_index, min(end_index, self.rooms_to_scrape), 10):
+            url = f"{self.url}{i}"
+        for i in range(start_index, min(end_index, self.rooms_to_scrape), 10):
+            url = f"{self.url}{i}"
 
-                soup = self._get_soup(url)
-                if soup:
-                    self.rooms.extend(self._get_rooms_info(soup, previous_rooms))
-                    logged_rooms = (
-                        i + 10 if i + 10 < self.rooms_to_scrape else num_rooms
-                    )
-                    self.logger.info(
-                        f"{len(self.rooms):^15}{self.already_logged:^15}{self.unavailable_rooms:^15}{logged_rooms:^15}"
-                    )
+            soup = self._get_soup(url)
+
+            if soup:
+                self.rooms.extend(self._get_rooms_info(soup, previous_rooms))
+                total_rooms = (
+                    len(self.rooms) + self.already_logged + self.unavailable_rooms
+                )
+                self.logger.info(
+                    f"{len(self.rooms):^15}{self.already_logged:^15}{self.unavailable_rooms:^15}{total_rooms:^15}"
+                )
+            soup = self._get_soup(url)
+
+            if soup:
+                self.rooms.extend(self._get_rooms_info(soup, previous_rooms))
+                total_rooms = (
+                    len(self.rooms) + self.already_logged + self.unavailable_rooms
+                )
+                self.logger.info(
+                    f"{len(self.rooms):^15}{self.already_logged:^15}{self.unavailable_rooms:^15}{total_rooms:^15}"
+                )
         return self.rooms
+
+    def _get_room_offset(self):
+        navbar = self.scraper.find("p", {"class": "navcurrent"})
+        navbar_item = navbar.findAll("strong")
+        # Get the number of 'results'
+        result_quantity = navbar_item[1]
+        # NOTE: In some situations, it may say the maximum of 1000.
+        room_offset = result_quantity.string[:-1] if not result_quantity.string.endswith("+") else result_quantity.string[:-2]
+        room_offset = (
+            result_quantity.string[:-1]
+            if not result_quantity.string.endswith("+")
+            else result_quantity.string[:-2]
+        )
+        return int(room_offset)
 
 
 class Room:
@@ -252,6 +236,8 @@ class Room:
 
     """
 
+    logger = DwellistLogger.get_logger()
+
     def __init__(self, room_soup, domain):
         # Get listing page
         self.url = str(domain + room_soup.find("a")["href"])
@@ -262,7 +248,7 @@ class Room:
             header = room_soup.find("div", {"id": "listing_heading"})
             self.title = str(header.h1.text.strip()) if header.h1 else None
         except AttributeError:
-            print("[X] Error parsing listing page - probably not live")
+            self.logger.error("Error parsing listing page - probably not live")
             return
         self.desc = str(
             room_soup.find("p", {"class": "detaildesc"})
@@ -276,17 +262,16 @@ class Room:
         pm_prices = self._get_all_room_prices_pm(room_soup)
         for i, room in enumerate(pm_prices):
             price, type = int(str(room["price"]).replace(",", "")), room["type"]
-            setattr(self, f"room_{i}_price", price)
-            setattr(self, f"room_{i}_type", type)
+            setattr(self, f"room_{i+1}_price", price)
+            setattr(self, f"room_{i+1}_type", type)
 
-        # Calculate commute times
         self.location_coords = self._get_location_coords(room_soup)
-        # commute_times = get_travel_information(self.location_coords, api_key=citymapper_api_key, work_coords=workplace_coords)
-        # self.cycle_time = commute_times['bike_time_minutes']
-        # self.transit_time = commute_times['transit_time_minutes']
 
         features = self._get_features(room_soup)
-        [setattr(self, feature, features[feature]) for feature in features]
+
+        for header in features:
+            value = features[header]
+            setattr(self, header, value)
 
         # Todays date
         self.date_scraped = datetime.datetime.now().strftime("%d-%m-%Y")
@@ -329,7 +314,7 @@ class Room:
                 rooms.append({"price": price, "type": type})
         except Exception as e:
             # Save room soup to file for debugging
-            with open(f"room_debug/room_{self.id}.html", "w", encoding="utf-8") as file:
+            with open(f"room_{self.id}.html", "w", encoding="utf-8") as file:
                 file.write(str(room_soup))
             self.logger.error("Error parsing room price: %s", e)
             self.logger.info(self.url)
@@ -339,20 +324,21 @@ class Room:
     def _get_key_features(self, room_soup):
         feature_list = room_soup.find("ul", class_="key-features")
         features = {
-            "Type": None,
-            "Area": None,
-            "Postcode": None,
-            "Nearest station": None,
+            "type": None,
+            "area": None,
+            "postcode": None,
+            "nearest_station": None,
         }
         for i, li in enumerate(feature_list.find_all("li")):
             # check if there is a sublist, and if so only take the first element
-            text = li.text.strip()
+            text = li.text.strip().replace("\n", "").strip()
+            text = " ".join(text.split())
             if i == 2:
                 text = text.split(" ")[0]
             elif i == 3:
                 text = text.split("\n")[0]
 
-            features[list(features.keys())[i]] = li.text.strip()
+            features[list(features.keys())[i]] = text
         return features
 
     def _get_features(self, room_soup):
@@ -360,19 +346,43 @@ class Room:
         features = {}
         for feature_list in feature_lists:
             for dt, dd in zip(feature_list.find_all("dt"), feature_list.find_all("dd")):
-                key = dt.text.replace("\n", " ").replace("#", "").strip().capitalize()
+                key = dt.text.replace("\n", "").replace("#", "").strip().lower()
+                # Replace spaces, dashes, slashes, parentheses, quotes, colons, periods, commas, and ampersands with underscores
+                key = key.translate(str.maketrans(" -/()':.,&?", "___________"))
+                # Replace multiple underscores with a single underscore
+                key = "_".join(key.split("_")).strip("_")
                 features[key] = dd.text.strip()
 
-        images = room_soup.findAll("dl", class_="landscape")
-        for image in images:
-            for image_no, image_link in enumerate(image.find_all("a")):
+        main_image = self._get_main_image(room_soup)
+        if main_image is not None:
+            features["main_image"] = main_image
+
+            images = room_soup.find("ul", class_="additional_photo_list--has-photos")
+            for image_no, image_link in enumerate(images.find_all("a")):
                 # Get image from img src
-                link = image_link.find("img")["src"]
+                link = image_link["href"]
                 # Ensure image link is prefixed with https:
                 link = link if link.startswith("https:") else f"https:{link}"
-                features[f"image_{image_no}"] = link
+                features[f"image_{image_no+1}"] = link
 
+        # features["postcode"].replace("Area info", "")
         return features
+
+    def _get_main_image(self, room_soup):
+        try:
+            main_image_container = room_soup.find("dl", class_="landscape")
+            if main_image_container:
+                main_image = main_image_container.find("img")["src"]
+                main_image = (
+                    main_image
+                    if main_image.startswith("https:")
+                    else f"https:{main_image}"
+                )
+                return main_image
+            else:
+                return None  # Return None if main_image_container is not found
+        except (AttributeError, KeyError):
+            return None  # Handle exceptions and return None in case of errors
 
     def _get_location_coords(self, room_soup):
         script_text = room_soup.head.findAll("script")
@@ -393,9 +403,11 @@ class Room:
                     # latitude, longitude
                     location = (location[0], location[1])
                 except ValueError as e:
-                    self.logger.error("Error parsing location: %s", e)
-                    self.logger.info(self.url)
+                    self.logger.debug("Error parsing location: %s", e)
                     location = None
+                except Exception as e:
+                    self.logger.debug(self.url)
+                    self.logger.info(traceback.format_exc())
                 return location
 
 
