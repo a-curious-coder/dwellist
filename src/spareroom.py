@@ -1,13 +1,13 @@
-
-from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
 import datetime
-import pandas as pd
-import requests
-from src.searchconstructor import SearchConstructor
 from src.utilities import DwellistLogger
 import traceback
 
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
+
+from src.searchconstructor import SearchConstructor
 
 
 class SpareRoom:
@@ -56,8 +56,9 @@ class SpareRoom:
 
     def process_room(self, room, previous_rooms, logged_rooms):
         # NOTE: Debugging purposes
-        with open("room_debug/room.txt", "w", encoding="utf-8") as file:
+        with open("room.txt", "w", encoding="utf-8") as file:
             file.write(room.prettify())
+
 
         try:
             room_id = int(room.prettify().split("flatshare_id=")[1].split("&")[0])
@@ -128,15 +129,10 @@ class SpareRoom:
 
         try:
             rooms = rooms_soup.find_all("article", class_="panel-listing-result")
-            # Ensure class featured-listing is not included in rooms
-            rooms = [room for room in rooms if "listing-featured" not in str(room)]
             num_available_rooms = len(rooms)
-        except AttributeError:
-            self.logger.debug("The number of rooms is on a 10 (e.g. 990 or 1000)")
         except Exception as e:
             self.logger.error("Error occurred: {}".format(e))
             self.logger.error(traceback.format_exc())
-
         return num_available_rooms
 
     def get_total_results(self):
@@ -219,6 +215,7 @@ class Room:
         self.url = str(domain + room_soup.find("a")["href"])
         self.id = int(self.url.split("flatshare_id=")[1].split("&")[0])
         room_soup = BeautifulSoup(requests.get(self.url).content, "lxml")
+        self.logger = DwellistLogger.get_logger()
         # Populate basics from the search results page
         try:
             header = room_soup.find("div", {"id": "listing_heading"})
