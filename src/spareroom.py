@@ -1,13 +1,13 @@
-
-from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
 import datetime
-import pandas as pd
-import requests
-from src.searchconstructor import SearchConstructor
 from src.utilities import DwellistLogger
 import traceback
 
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
+
+from src.searchconstructor import SearchConstructor
 
 
 class SpareRoom:
@@ -58,7 +58,6 @@ class SpareRoom:
         # NOTE: Debugging purposes
         with open("room.txt", "w", encoding="utf-8") as file:
             file.write(room.prettify())
-
 
         try:
             room_id = int(room.prettify().split("flatshare_id=")[1].split("&")[0])
@@ -130,9 +129,7 @@ class SpareRoom:
         try:
             rooms = rooms_soup.find_all("article", class_="panel-listing-result")
             # Exclude listing-featured rooms
-            rooms = [
-                room for room in rooms if "listing-featured" not in str(room)
-            ]
+            rooms = [room for room in rooms if "listing-featured" not in str(room)]
             num_available_rooms = len(rooms)
         except Exception as e:
             self.logger.error("Error occurred: {}".format(e))
@@ -144,11 +141,17 @@ class SpareRoom:
         if soup:
             last_page_rooms = self._count_available_rooms(soup)
 
-            most_rooms = (self.max_pages * 10)-10
+            most_rooms = (self.max_pages * 10) - 10
             rooms_to_scrape = min(self.rooms_to_scrape, most_rooms)
 
-            num_rooms = rooms_to_scrape if rooms_to_scrape < (most_rooms+last_page_rooms) else (most_rooms+last_page_rooms)
-            self.logger.info(f"Scraping {num_rooms}/{(most_rooms+last_page_rooms)} potential rooms.")
+            num_rooms = (
+                rooms_to_scrape
+                if rooms_to_scrape < (most_rooms + last_page_rooms)
+                else (most_rooms + last_page_rooms)
+            )
+            self.logger.info(
+                f"Scraping {num_rooms}/{(most_rooms+last_page_rooms)} potential rooms."
+            )
         else:
             self.logger.error("Failed to fetch search results")
         return num_rooms
@@ -191,7 +194,11 @@ class SpareRoom:
         # Get the number of 'results'
         result_quantity = navbar_item[1]
         # NOTE: In some situations, it may say the maximum of 1000.
-        room_offset = result_quantity.string[:-1] if not result_quantity.string.endswith("+") else result_quantity.string[:-2]
+        room_offset = (
+            result_quantity.string[:-1]
+            if not result_quantity.string.endswith("+")
+            else result_quantity.string[:-2]
+        )
         return int(room_offset)
 
 
