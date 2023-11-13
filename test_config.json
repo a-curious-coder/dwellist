@@ -4,7 +4,7 @@
   "rooms_to_scrape": 30,
   "available_from": "",
   "available_search": "",
-  "bills_inc": "Y",
+  "bills_inc": "Yes",
   "couples": "",
   "days_of_wk_available": "7+days+a+week",
   "disabled_access": "",

@@ -35,8 +35,7 @@ def process_next_ten_rooms(args) -> bool:
         for room in new_rooms
         if existing_rooms_df.empty or room.id not in existing_rooms_df["id"].values
     ]
-    # Preprocess data;
-    preprocess_data(filtered_new_rooms)
+    # TODO; Preprocess data
     # Append new rooms to the spreadsheet
     append_new_rooms_to_spreadsheet(existing_rooms_df, filtered_new_rooms, filename)
     return True
@@ -74,7 +73,7 @@ def main():
         start_time = time.time()
         get_new_rooms(scrapable_room_count, spare_room, existing_rooms_df, filename)
         end_time = time.time()
-        logger.info("SYNC Time elapsed: %s seconds", end_time - start_time)
+        logger.info("SYNC Time: %s seconds", end_time - start_time)
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt.")
