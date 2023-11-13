@@ -142,17 +142,11 @@ class SpareRoom:
         if soup:
             last_page_rooms = self._count_available_rooms(soup)
 
-            most_rooms = (self.max_pages * 10) - 10
+            most_rooms = (self.max_pages * 10)-10
             rooms_to_scrape = min(self.rooms_to_scrape, most_rooms)
 
-            num_rooms = (
-                rooms_to_scrape
-                if rooms_to_scrape < (most_rooms + last_page_rooms)
-                else (most_rooms + last_page_rooms)
-            )
-            self.logger.info(
-                f"Scraping {num_rooms}/{(most_rooms+last_page_rooms)} potential rooms."
-            )
+            num_rooms = rooms_to_scrape if rooms_to_scrape < (most_rooms+last_page_rooms) else (most_rooms+last_page_rooms)
+            self.logger.info(f"Scraping {num_rooms}/{(most_rooms+last_page_rooms)} potential rooms.")
         else:
             self.logger.error("Failed to fetch search results")
         return num_rooms
@@ -228,7 +222,6 @@ class Room:
         self.url = str(domain + room_soup.find("a")["href"])
         self.id = int(self.url.split("flatshare_id=")[1].split("&")[0])
         room_soup = BeautifulSoup(requests.get(self.url).content, "lxml")
-        self.logger = DwellistLogger.get_logger()
         # Populate basics from the search results page
         try:
             header = room_soup.find("div", {"id": "listing_heading"})
