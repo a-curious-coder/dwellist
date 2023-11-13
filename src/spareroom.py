@@ -189,6 +189,7 @@ class SpareRoom:
         # Get the number of 'results'
         result_quantity = navbar_item[1]
         # NOTE: In some situations, it may say the maximum of 1000.
+        room_offset = result_quantity.string[:-1] if not result_quantity.string.endswith("+") else result_quantity.string[:-2]
         room_offset = (
             result_quantity.string[:-1]
             if not result_quantity.string.endswith("+")
