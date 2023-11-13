@@ -7,14 +7,12 @@ Barebones taken from afspies; modified, updated and improved by a-curious-coder
 import json
 import os
 import time
-from math import ceil
 from src.spareroom import (
     SpareRoom,
     append_new_rooms_to_spreadsheet,
     read_existing_rooms_from_spreadsheet,
 )
 from src.utilities import DwellistLogger, print_title
-from concurrent.futures import ThreadPoolExecutor
 
 
 def process_next_ten_rooms(args) -> bool:
@@ -41,10 +39,13 @@ def process_next_ten_rooms(args) -> bool:
     append_new_rooms_to_spreadsheet(existing_rooms_df, filtered_new_rooms, filename)
     return True
 
+def preprocess_data(new_rooms):
+    """ TODO: Preprocess new room_data"""
+    pass
+
 def get_new_rooms(scrapable_room_count, spare_room, existing_rooms_df, filename):
     counter = 0
-    while counter <= ceil(scrapable_room_count // 10):
-        process_next_ten_rooms((spare_room, existing_rooms_df, filename, counter))
+    while process_next_ten_rooms((spare_room, existing_rooms_df, filename, counter)):
         counter += 1
 
 
@@ -74,7 +75,8 @@ def main():
         start_time = time.time()
         get_new_rooms(scrapable_room_count, spare_room, existing_rooms_df, filename)
         end_time = time.time()
-        logger.info("SYNC Time elapsed: %s seconds", end_time - start_time)
+        elapsed = f"{end_time - start_time:.2f}"
+        logger.info("SYNC Time elapsed: %s seconds", elapsed)
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt.")

@@ -34,7 +34,7 @@ class SpareRoom:
         self.logger.debug(f"URL: {request.url}")
 
         self.rooms = []
-        self.room_offset = self._get_room_offset()
+        self.max_pages = self._get_room_offset()
         self.url = f"{request.url}offset="
 
     def _get_soup(self, url):
@@ -130,6 +130,10 @@ class SpareRoom:
 
         try:
             rooms = rooms_soup.find_all("article", class_="panel-listing-result")
+            # Exclude listing-featured rooms
+            rooms = [
+                room for room in rooms if "listing-featured" not in str(room)
+            ]
             num_available_rooms = len(rooms)
         except Exception as e:
             self.logger.error("Error occurred: {}".format(e))
@@ -137,12 +141,15 @@ class SpareRoom:
         return num_available_rooms
 
     def get_total_results(self):
-        rooms_to_scrape = min(self.rooms_to_scrape, (self.room_offset * 10))
         soup = self._get_soup(self.url)
         if soup:
-            num_rooms = self._count_available_rooms(soup)
-            num_rooms = num_rooms + (rooms_to_scrape)
-            self.logger.info(f"Scraping {num_rooms} rooms.")
+            last_page_rooms = self._count_available_rooms(soup)
+
+            most_rooms = (self.max_pages * 10)-10
+            rooms_to_scrape = min(self.rooms_to_scrape, most_rooms)
+
+            num_rooms = rooms_to_scrape if rooms_to_scrape < (most_rooms+last_page_rooms) else (most_rooms+last_page_rooms)
+            self.logger.info(f"Scraping {num_rooms}/{(most_rooms+last_page_rooms)} potential rooms.")
         else:
             self.logger.error("Failed to fetch search results")
         return num_rooms
@@ -155,10 +162,8 @@ class SpareRoom:
         """
         start_index = input * 10
         end_index = start_index + 10
-        num_rooms = 0
 
         if start_index >= self.rooms_to_scrape:
-            self.logger.info("Scraping process complete")
             return None
 
         if input == 0:
@@ -187,8 +192,7 @@ class SpareRoom:
         # Get the number of 'results'
         # NOTE: In some situations, it may say the maximum of 1000.
         room_offset = navbar_item[1].string[:-1]
-        room_offset = 1 if room_offset == "" else int(room_offset) // 10
-        return room_offset
+        return int(room_offset)
 
 
 class Room:
@@ -216,7 +220,6 @@ class Room:
         self.url = str(domain + room_soup.find("a")["href"])
         self.id = int(self.url.split("flatshare_id=")[1].split("&")[0])
         room_soup = BeautifulSoup(requests.get(self.url).content, "lxml")
-        self.logger = DwellistLogger.get_logger()
         # Populate basics from the search results page
         try:
             header = room_soup.find("div", {"id": "listing_heading"})
@@ -288,7 +291,7 @@ class Room:
                 rooms.append({"price": price, "type": type})
         except Exception as e:
             # Save room soup to file for debugging
-            with open(f"room_debug/room_{self.id}.html", "w", encoding="utf-8") as file:
+            with open(f"room_{self.id}.html", "w", encoding="utf-8") as file:
                 file.write(str(room_soup))
             self.logger.error("Error parsing room price: %s", e)
             self.logger.info(self.url)
@@ -337,7 +340,7 @@ class Room:
                 link = image_link["href"]
                 # Ensure image link is prefixed with https:
                 link = link if link.startswith("https:") else f"https:{link}"
-                features[f"image_{image_no}"] = link
+                features[f"image_{image_no+1}"] = link
 
         # features["postcode"].replace("Area info", "")
         return features
