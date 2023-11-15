@@ -1,7 +1,7 @@
 {
   "filename": "spareroom_listing.csv",
   "search_term": "London",
-  "rooms_to_scrape": 30,
+  "rooms_to_scrape": 100,
   "available_from": "",
   "available_search": "",
   "bills_inc": "Yes",

@@ -7,16 +7,16 @@ Barebones taken from afspies; modified, updated and improved by a-curious-coder
 import json
 import os
 import time
-from src.spareroom import (
+from scraper.spareroom import (
     SpareRoom,
     append_new_rooms_to_spreadsheet,
     read_existing_rooms_from_spreadsheet,
 )
-from src.utilities import DwellistLogger, print_title
+from scraper.utilities import DwellistLogger, print_title
 
 
 def process_next_ten_rooms(args) -> bool:
-    spare_room, existing_rooms_df, filename, counter = args
+    spare_room, existing_rooms_df, filepath, counter = args
     new_rooms = spare_room.get_next_ten_rooms(
         previous_rooms=existing_rooms_df, input=counter
     )
@@ -36,14 +36,16 @@ def process_next_ten_rooms(args) -> bool:
     # Preprocess data;
     preprocess_data(filtered_new_rooms)
     # Append new rooms to the spreadsheet
-    append_new_rooms_to_spreadsheet(existing_rooms_df, filtered_new_rooms, filename)
+    append_new_rooms_to_spreadsheet(existing_rooms_df, filtered_new_rooms, filepath)
     return True
 
+
 def preprocess_data(new_rooms):
-    """ TODO: Preprocess new room_data"""
+    """TODO: Preprocess new room_data"""
     pass
 
-def get_new_rooms(scrapable_room_count, spare_room, existing_rooms_df, filename):
+
+def get_new_rooms(spare_room, existing_rooms_df, filename):
     counter = 0
     while process_next_ten_rooms((spare_room, existing_rooms_df, filename, counter)):
         counter += 1
@@ -64,8 +66,9 @@ def main():
 
     try:
         filename = config["filename"]
+        filepath = os.path.join(os.getcwd(), "scraper\\data\\" + filename)
         # Read the existing rooms from the spreadsheet
-        existing_rooms_df = read_existing_rooms_from_spreadsheet(filename)
+        existing_rooms_df = read_existing_rooms_from_spreadsheet(filepath)
 
         # Instantiate SpareRoom and get new rooms
         spare_room = SpareRoom(config)
@@ -73,7 +76,7 @@ def main():
         # divide by 10 because we get 10 results per page
 
         start_time = time.time()
-        get_new_rooms(scrapable_room_count, spare_room, existing_rooms_df, filename)
+        get_new_rooms(spare_room, existing_rooms_df, filepath)
         end_time = time.time()
         elapsed = f"{end_time - start_time:.2f}"
         logger.info("SYNC Time elapsed: %s seconds", elapsed)
