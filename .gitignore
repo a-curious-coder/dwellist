@@ -11,6 +11,3 @@ room_debug/
 *.log
 *.ipynb
 tests/
-*.log
-*.ipynb
-tests/

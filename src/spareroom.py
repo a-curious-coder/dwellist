@@ -33,11 +33,6 @@ class SpareRoom:
             self.scraper = BeautifulSoup(request.content, "lxml")
         self.logger.debug(f"URL: {request.url}")
 
-            request = session.get(self.URL_SEARCH)
-            request.raise_for_status()
-            self.scraper = BeautifulSoup(request.content, "lxml")
-        self.logger.debug(f"URL: {request.url}")
-
         self.rooms = []
         self.max_pages = self._get_room_offset()
         self.url = f"{request.url}offset="
@@ -136,9 +131,7 @@ class SpareRoom:
         try:
             rooms = rooms_soup.find_all("article", class_="panel-listing-result")
             # Exclude listing-featured rooms
-            rooms = [
-                room for room in rooms if "listing-featured" not in str(room)
-            ]
+            rooms = [room for room in rooms if "listing-featured" not in str(room)]
             num_available_rooms = len(rooms)
         except Exception as e:
             self.logger.error("Error occurred: {}".format(e))
@@ -178,19 +171,7 @@ class SpareRoom:
 
         for i in range(start_index, min(end_index, self.rooms_to_scrape), 10):
             url = f"{self.url}{i}"
-        for i in range(start_index, min(end_index, self.rooms_to_scrape), 10):
-            url = f"{self.url}{i}"
 
-            soup = self._get_soup(url)
-
-            if soup:
-                self.rooms.extend(self._get_rooms_info(soup, previous_rooms))
-                total_rooms = (
-                    len(self.rooms) + self.already_logged + self.unavailable_rooms
-                )
-                self.logger.info(
-                    f"{len(self.rooms):^15}{self.already_logged:^15}{self.unavailable_rooms:^15}{total_rooms:^15}"
-                )
             soup = self._get_soup(url)
 
             if soup:
