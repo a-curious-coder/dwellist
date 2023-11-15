@@ -153,6 +153,7 @@ function filterMarkers(minPrice, maxPrice, billsIncluded) {
 
     return filteredMarkers;
 }
+
 // JavaScript to handle filter card toggle
 var filterCollapsible = document.querySelector('.filter-collapsible');
 var filterCard = document.querySelector('.filter-card');
@@ -177,7 +178,6 @@ document.getElementById('filterButton').addEventListener('click',
         addMarkers(filteredMarkers);
     }
 );
-
 
 // Fetch data from Flask backend
 fetch('/get_markers')
