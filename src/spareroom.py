@@ -60,6 +60,7 @@ class SpareRoom:
         with open("room.txt", "w", encoding="utf-8") as file:
             file.write(room.prettify())
 
+
         try:
             room_id = int(room.prettify().split("flatshare_id=")[1].split("&")[0])
         except (KeyError, ValueError, IndexError) as e:
