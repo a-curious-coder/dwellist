@@ -5,22 +5,16 @@ from . import main
 import sys
 
 
+def find_index_html(start_path="."):
+    for root, dirs, files in os.walk(start_path):
+        if "index.html" in files:
+            return os.path.join(root, "index.html")
+
+
 @main.route("/")
 def index():
-    print(
-        "\n\n\n\n\n\n",
-        file=sys.stderr,
-    )
-    try:
-        print(f"Current WD: {os.getcwd()}", file=sys.stderr)
-    except Exception:
-        pass
-
-    try:
-        print(f"Current direc: {os.listdir()}", file=sys.stderr)
-    except Exception:
-        pass
-    index_path = "index.html"
+    index_path = find_index_html()
+    print(find_index_html(), file=sys.stderr)
     # Does index.html exist?
     exist = os.path.exists(index_path)
     if not exist:
