@@ -1,7 +1,6 @@
 config.json
 log.txt
 .venv
-*.html
 *.csv
 .vscode
 __pycache__
