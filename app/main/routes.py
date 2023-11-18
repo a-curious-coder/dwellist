@@ -6,6 +6,10 @@ from . import main
 
 @main.route("/")
 def index():
+    print("Hello, world!")
+    print(os.getcwd())
+    print(os.listdir())
+    print(f"{'*':50}")
     return render_template("index.html")
 
 
