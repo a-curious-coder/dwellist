@@ -13,7 +13,7 @@ var markersData = [];
 
 function generatePopupContent(row) {
     var imageLink = row["main_image"] ? `<img src="${row["main_image"]}" alt="Property Image" style="max-width: 100%">` : '';
-    var roomPrice = "£" + row["room_0_price"];
+    var roomPrice = "£" + row["room_1_price"];
 
     var popupContent = `
         <div style="width: 200px;">
@@ -38,7 +38,7 @@ function updateMarkerDetailsCard(content) {
 
 function generateCardContent(row) {
     var imageLink = row["main_image"] ? `<img src="${row["main_image"]}" alt="Property Image" style="max-width: 100%">` : '';
-    var roomPrice = "£" + row["room_0_price"];
+    var roomPrice = "£" + row["room_1_price"];
 
     var cardContent = `
         <h3>${row["area"]}</h3>
@@ -145,7 +145,7 @@ function filterMarkers(minPrice, maxPrice, billsIncluded) {
     var filteredMarkers = markersData.filter(
         function(marker) {
             // Create let variables for the price of the room cast to a integer
-            let roomPrice = parseInt(marker.room_0_price);
+            let roomPrice = parseInt(marker.room_1_price);
             // Print a message to console stating whether the price is more than or less than the minimum price
             return roomPrice >= minPrice && roomPrice <= maxPrice && billsIncluded === marker.bills_included;
         }
