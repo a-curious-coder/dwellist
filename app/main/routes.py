@@ -7,7 +7,27 @@ import sys
 
 @main.route("/")
 def index():
-    return render_template("index.html")
+    print(
+        "\n\n\n\n\n\n",
+        file=sys.stderr,
+    )
+    try:
+        print(f"Current WD: {os.getcwd()}", file=sys.stderr)
+    except Exception:
+        pass
+
+    try:
+        print(f"Current direc: {os.listdir()}", file=sys.stderr)
+    except Exception:
+        pass
+    index_path = "index.html"
+    # Does index.html exist?
+    exist = os.path.exists(index_path)
+    if not exist:
+        print(f"NOT EXIST", file=sys.stderr)
+    else:
+        print(f"EXIST\n\n", file=sys.stderr)
+    return render_template(index_path)
 
 
 def read_csv():
