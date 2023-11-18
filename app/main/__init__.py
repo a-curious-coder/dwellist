@@ -1,5 +1,9 @@
 from flask import Blueprint
+import os
 
-main = Blueprint("main", __name__, template_folder="templates")
+# TODO: Maybe do something more conventional here in future
+absolute_templates_path = os.path.join(os.getcwd(), "\\app\\templates")
+
+main = Blueprint("main", __name__, template_folder=absolute_templates_path)
 
 from . import routes
