@@ -2,10 +2,10 @@
 FROM python:3.9-slim
 
 # Set the working directory to /app
-WORKDIR /app
+WORKDIR /dwellist
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy the current directory contents into the container at /dwellist
+COPY . /dwellist
 
 # Install latest pip
 RUN python -m pip install --upgrade pip
