@@ -12,7 +12,7 @@ def index():
 def read_csv():
     """Load data as a list of dictionaries"""
     # Read CSV file
-    with open("scraper/data/spareroom_listing.csv", "r", encoding="utf-8") as csv_file:
+    with open("dwellist/data/spareroom_listing.csv", "r", encoding="utf-8") as csv_file:
         data = list(csv.DictReader(csv_file))
 
     # Move back to app directory
